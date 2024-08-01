@@ -9,8 +9,10 @@ export default function Home() {
   const [open, setOpen] = useState(false);
   const [itemName, setItemName] = useState('');
   const [quantityToAdd, setQuantityToAdd] = useState(1);
+  const [quantityToRemove, setQuantityToRemove] = useState(1);
   const [selectedItem, setSelectedItem] = useState(null);
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [removeModalOpen, setRemoveModalOpen] = useState(false);
 
   const updateInventory = async () => {
     const snapshot = query(collection(firestore, 'inventory'));
@@ -39,16 +41,16 @@ export default function Home() {
     await updateInventory();
   };
 
-  const removeItem = async (item) => {
+  const removeItem = async (item, quantity = 1) => {
     const docRef = doc(collection(firestore, 'inventory'), item);
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
-      const { quantity } = docSnap.data();
-      if (quantity === 1) {
+      const { quantity: currentQuantity } = docSnap.data();
+      if (currentQuantity <= quantity) {
         await deleteDoc(docRef);
       } else {
-        await setDoc(docRef, { quantity: quantity - 1 });
+        await setDoc(docRef, { quantity: currentQuantity - quantity });
       }
     }
     await updateInventory();
@@ -62,6 +64,12 @@ export default function Home() {
     setAddModalOpen(true);
   };
   const handleAddModalClose = () => setAddModalOpen(false);
+  const handleRemoveModalOpen = (item) => {
+    setSelectedItem(item);
+    setQuantityToRemove(1);
+    setRemoveModalOpen(true);
+  };
+  const handleRemoveModalClose = () => setRemoveModalOpen(false);
 
   useEffect(() => {
     updateInventory();
@@ -157,6 +165,46 @@ export default function Home() {
           </Button>
         </Box>
       </Modal>
+      <Modal open={removeModalOpen} onClose={handleRemoveModalClose}>
+        <Box
+          position="absolute"
+          top="50%"
+          left="50%"
+          width={400}
+          bgcolor="white"
+          border="2px solid #000"
+          boxShadow={24}
+          p={4}
+          display="flex"
+          flexDirection="column"
+          gap={3}
+          sx={{
+            transform: "translate(-50%, -50%)",
+          }}
+        >
+          <Typography variant="h6">Remove Quantity from {selectedItem}</Typography>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <Button variant="outlined" onClick={() => setQuantityToRemove(quantityToRemove - 1)} disabled={quantityToRemove <= 1}>-</Button>
+            <TextField
+              type="number"
+              value={quantityToRemove}
+              onChange={(e) => setQuantityToRemove(parseInt(e.target.value))}
+              inputProps={{ min: 1 }}
+              sx={{ width: 100 }}
+            />
+            <Button variant="outlined" onClick={() => setQuantityToRemove(quantityToRemove + 1)}>+</Button>
+          </Stack>
+          <Button
+            variant="contained"
+            onClick={() => {
+              removeItem(selectedItem, quantityToRemove);
+              handleRemoveModalClose();
+            }}
+          >
+            Remove Quantity
+          </Button>
+        </Box>
+      </Modal>
       <Button
         variant="contained"
         onClick={() => {
@@ -211,7 +259,7 @@ export default function Home() {
                 <Button
                   variant="contained"
                   onClick={() => {
-                    removeItem(name);
+                    handleRemoveModalOpen(name);
                   }}
                 >
                   Remove
