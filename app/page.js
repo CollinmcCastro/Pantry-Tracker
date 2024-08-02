@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import { firestore } from '@/firebase';
 import { Box, Button, Modal, Stack, TextField, Typography, MenuItem, Select, FormControl, InputLabel } from "@mui/material";
 import { collection, deleteDoc, doc, getDocs, query, getDoc, setDoc } from "firebase/firestore";
+import React from 'react';
+
 
 export default function Home() {
   const [inventory, setInventory] = useState([]);
@@ -297,7 +299,7 @@ export default function Home() {
                     handleRemoveModalOpen(name);
                   }}
                 >
-                  Remove
+                  Remove XXX
                 </Button>
               </Stack>
             </Box>
@@ -305,5 +307,8 @@ export default function Home() {
         </Stack>
       </Box>
     </Box>
+  
+    
   );
+    
 }
