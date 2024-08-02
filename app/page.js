@@ -299,7 +299,7 @@ export default function Home() {
                     handleRemoveModalOpen(name);
                   }}
                 >
-                  Remove XXX
+                  Remove
                 </Button>
               </Stack>
             </Box>
