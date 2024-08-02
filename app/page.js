@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react';
 import { firestore } from '@/firebase';
-import { Box, Button, Modal, Stack, TextField, Typography } from "@mui/material";
+import { Box, Button, Modal, Stack, TextField, Typography, MenuItem, Select, FormControl, InputLabel } from "@mui/material";
 import { collection, deleteDoc, doc, getDocs, query, getDoc, setDoc } from "firebase/firestore";
 
 export default function Home() {
@@ -13,6 +13,8 @@ export default function Home() {
   const [selectedItem, setSelectedItem] = useState(null);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [removeModalOpen, setRemoveModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortMethod, setSortMethod] = useState('alphabetical');
 
   const updateInventory = async () => {
     const snapshot = query(collection(firestore, 'inventory'));
@@ -25,7 +27,6 @@ export default function Home() {
       });
     });
     setInventory(inventoryList);
-    console.log(inventoryList);
   };
 
   const addItem = async (item, quantity = 1) => {
@@ -74,6 +75,21 @@ export default function Home() {
   useEffect(() => {
     updateInventory();
   }, []);
+
+  const filteredInventory = inventory.filter(item =>
+    item.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const sortedInventory = [...filteredInventory].sort((a, b) => {
+    if (sortMethod === 'alphabetical') {
+      return a.name.localeCompare(b.name);
+    } else if (sortMethod === 'highestQuantity') {
+      return b.quantity - a.quantity;
+    } else if (sortMethod === 'lowestQuantity') {
+      return a.quantity - b.quantity;
+    }
+    return 0;
+  });
 
   return (
     <Box
@@ -142,7 +158,7 @@ export default function Home() {
             transform: "translate(-50%, -50%)",
           }}
         >
-          <Typography variant="h6">Add Quantity to {selectedItem}</Typography>
+          <Typography variant="h6">Add amount to {selectedItem}</Typography>
           <Stack direction="row" spacing={2} alignItems="center">
             <Button variant="outlined" onClick={() => setQuantityToAdd(quantityToAdd - 1)} disabled={quantityToAdd <= 1}>-</Button>
             <TextField
@@ -161,7 +177,7 @@ export default function Home() {
               handleAddModalClose();
             }}
           >
-            Add Quantity
+            Add
           </Button>
         </Box>
       </Modal>
@@ -182,7 +198,7 @@ export default function Home() {
             transform: "translate(-50%, -50%)",
           }}
         >
-          <Typography variant="h6">Remove Quantity from {selectedItem}</Typography>
+          <Typography variant="h6">Remove amount from {selectedItem}</Typography>
           <Stack direction="row" spacing={2} alignItems="center">
             <Button variant="outlined" onClick={() => setQuantityToRemove(quantityToRemove - 1)} disabled={quantityToRemove <= 1}>-</Button>
             <TextField
@@ -201,7 +217,7 @@ export default function Home() {
               handleRemoveModalClose();
             }}
           >
-            Remove Quantity
+            Remove
           </Button>
         </Box>
       </Modal>
@@ -213,7 +229,26 @@ export default function Home() {
       >
         Add New Item
       </Button>
-      <Box border="1px solid #333" width="800px">
+      <TextField
+        variant='outlined'
+        placeholder='Search items'
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        sx={{ width: '50%', marginBottom: 2 }}
+      />
+      <FormControl variant="outlined" sx={{ width: '50%', marginBottom: 2 }}>
+        <InputLabel>Sort By</InputLabel>
+        <Select
+          value={sortMethod}
+          onChange={(e) => setSortMethod(e.target.value)}
+          label="Sort By"
+        >
+          <MenuItem value="alphabetical">Alphabetical</MenuItem>
+          <MenuItem value="highestQuantity">Highest Quantity</MenuItem>
+          <MenuItem value="lowestQuantity">Lowest Quantity</MenuItem>
+        </Select>
+      </FormControl>
+      <Box border="1px solid #333" width="800px" height="600px" overflow="auto">
         <Box
           width="100%"
           height="100px"
@@ -227,8 +262,8 @@ export default function Home() {
           </Typography>
         </Box>
 
-        <Stack width="100%" spacing={2} overflow="auto" padding={2}>
-          {inventory.map(({ name, quantity }) => (
+        <Stack width="100%" spacing={2} padding={2}>
+          {sortedInventory.map(({ name, quantity }) => (
             <Box
               key={name}
               width="100%"
